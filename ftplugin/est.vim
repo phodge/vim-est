@@ -1,0 +1,2 @@
+setlocal sts=2 ts=2 sw=2 et
+nnoremap <buffer> <F5> :!est %<CR>
