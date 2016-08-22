@@ -1,0 +1,55 @@
+#!/usr/local/bin/php
+<?php
+
+if (isset($argv[1]) && $argv[1] && file_exists($argv[1])) {
+    $input = file_get_contents($argv[1]);
+} else {
+    $input = '';
+    while (strlen($data = fread(STDIN, 1048576)))
+        $input .= $data;
+}
+
+$COMPLETED = 0;
+$OTHER     = 0;
+$TIMErs    = array();
+
+preg_match_all('/\[(\d+)\s+(min|hour)s?(\s+[A-Z_][A-Z0-9_]*)?\]/', $input, $matches, PREG_SET_ORDER);
+
+foreach ($matches as $match) {
+    $time = intval($match[1]);
+    if ($match[2] === 'hour')
+        $time *= 60;
+    else
+        assert($match[2] === 'min');
+
+    if (empty($match[3])) {
+        $OTHER += $time;
+    } else {
+        $section = trim($match[3]);
+        if ($section === 'DONE')
+            $COMPLETED += $time;
+        elseif (!isset($TIMERS[$section]))
+            $TIMERS[$section] = $time;
+        else
+            $TIMERS[$section] += $time;
+    }
+}
+
+function nicetime($minutes) {
+    if ($minutes > 60) {
+        $hours = intval(floor($minutes / 60));
+        $minutes -= $hours * 60;
+        return number_format($hours) . 'h ' . number_format($minutes) . 'm';
+    }
+
+    return number_format($minutes) . 'm';
+}
+
+// show completed time
+echo "Completed: ", nicetime($COMPLETED) . "\n\n";
+
+// show total remaining breakdown
+echo "Remaining: ", nicetime($OTHER + array_sum($TIMERS)), ":\n";
+foreach ($TIMERS as $name => $time)
+    echo "  $name: ", nicetime($time), "\n";
+echo "  (Other): ", nicetime($OTHER), "\n\n";
